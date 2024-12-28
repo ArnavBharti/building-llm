@@ -1,5 +1,6 @@
 import urllib.request
 import re
+import tiktoken
 
 # class SimpleTokensizerV1:
 #     """Throws KeyError when word is not in vocabulary."""
@@ -84,6 +85,13 @@ def main():
     # print(raw_text[:30])
     # print(ids)
     # print(tokenizer.decode(ids))
+
+    tokenizer = tiktoken.get_encoding("gpt2")
+    # test_sentence = "akwirw ier"
+    test_sentence = "Arnav Bharti is my name"
+    ids = tokenizer.encode(test_sentence)
+    print(ids)
+    print(tokenizer.decode(ids))
 
 if __name__ == "__main__":
     main()
