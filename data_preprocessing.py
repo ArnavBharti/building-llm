@@ -35,6 +35,7 @@ class SimpleTokensizerV2:
         text = " ".join([self.int_to_str[i] for i in ids])
         # Remove whitespace before specified punctuation marks.
         text = re.sub(r'\s+([,.?!"()\'])', r'\1', text)
+        return text
 
 
 def main():
@@ -73,12 +74,16 @@ def main():
     # ids = tokenizer.encode(raw_text[:30])
     # print(ids)
 
-    all_tokens = list(all_words).extend(["<|unk|>","<|endoftext|>"])
-    vocab = {token:integer for integer, token in enumerate(all_words)}
+    all_tokens = list(all_words)
+    all_tokens.extend(["<|unk|>","<|endoftext|>"])
+    # print(all_tokens[-5:])
+    vocab = {token:integer for integer, token in enumerate(all_tokens)}
 
-    tokenizer = SimpleTokensizerV2(vocab)
-    ids = tokenizer.encode(raw_text[:30])
-    print(ids)
+    # tokenizer = SimpleTokensizerV2(vocab)
+    # ids = tokenizer.encode(raw_text[:30])
+    # print(raw_text[:30])
+    # print(ids)
+    # print(tokenizer.decode(ids))
 
 if __name__ == "__main__":
     main()
