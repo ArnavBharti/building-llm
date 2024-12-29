@@ -39,25 +39,49 @@ from torch.utils.data import DataLoader, Dataset
 #         # Remove whitespace before specified punctuation marks.
 #         text = re.sub(r'\s+([,.?!"()\'])', r'\1', text)
 #         return text
-
+    
 class GPTDatasetV1(Dataset):
-    def __init__(self, text, tokenizer, max_length, stride):
+    def __init__(self, txt, tokenizer, max_length, stride):
         self.input_ids = []
         self.target_ids = []
 
-        token_ids = tokenizer.encode(text)
+        # Tokenize the entire text
+        token_ids = tokenizer.encode(txt, allowed_special={"<|endoftext|>"})
 
+        # Use a sliding window to chunk the book into overlapping sequences of max_length
         for i in range(0, len(token_ids) - max_length, stride):
-            input_chunk = token_ids[i:i+max_length]
-            output_chunk = token_ids[i+1:i+max_length+1]
-            self.input_ids.append(input_chunk)
-            self.target_ids.append(output_chunk)
+            input_chunk = token_ids[i:i + max_length]
+            target_chunk = token_ids[i + 1: i + max_length + 1]
+            self.input_ids.append(torch.tensor(input_chunk))
+            self.target_ids.append(torch.tensor(target_chunk))
 
     def __len__(self):
         return len(self.input_ids)
 
-    def __getitem__(self, index):
-        return self.input_ids[index], self.target_ids[index]
+    def __getitem__(self, idx):
+        return self.input_ids[idx], self.target_ids[idx]
+
+
+def create_dataloader_v1(txt, batch_size=4, max_length=256, 
+                         stride=128, shuffle=True, drop_last=True,
+                         num_workers=0):
+
+    # Initialize the tokenizer
+    tokenizer = tiktoken.get_encoding("gpt2")
+
+    # Create dataset
+    dataset = GPTDatasetV1(txt, tokenizer, max_length, stride)
+
+    # Create dataloader
+    dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        drop_last=drop_last,
+        num_workers=num_workers
+    )
+
+    return dataloader
 
 def main():
     # Download and store 'The Verdict'
@@ -106,7 +130,7 @@ def main():
     # print(ids)
     # print(tokenizer.decode(ids))
 
-    tokenizer = tiktoken.get_encoding("gpt2")
+    # tokenizer = tiktoken.get_encoding("gpt2")
     # test_sentence = "akwirw ier"
     # test_sentence = "Arnav Bharti is my name. Luziputi."
     # ids = tokenizer.encode(test_sentence)
@@ -123,6 +147,34 @@ def main():
     #     context = enc_sample[:i]
     #     desired = enc_sample[i]
     #     print(tokenizer.decode(context), "--->", tokenizer.decode([desired]))
+
+    dataloader = create_dataloader_v1(raw_text, batch_size=8, max_length=4, stride=4, shuffle=False)
+    # data_iter = iter(dataloader)
+    # first_batch = next(data_iter)
+    # print(first_batch)
+
+    # input_ids = torch.tensor([2,5,6,1])
+    vocab_size = 50257 
+    output_dim = 256
+    # torch.manual_seed(123)
+    token_embedding_layer = torch.nn.Embedding(vocab_size, output_dim)
+    # print(embedding_layer.weight)
+    # print(embedding_layer(torch.tensor([6])))
+    # print(token_embedding_layer(input_ids))
+
+    max_length = 4
+    dataloader = create_dataloader_v1(
+        raw_text, batch_size=8, max_length=max_length,
+        stride=max_length, shuffle=False
+    )
+    data_iter = iter(dataloader)
+    inputs, targets = next(data_iter)
+    # print("Token IDs:\n", inputs)
+    # print("\nInputs shape:\n", inputs.shape)
+    # print("Targets:", targets)
+    token_embeddings = token_embedding_layer(inputs)
+    # print(token_embeddings.shape)
+
 
 if __name__ == "__main__":
     main()
